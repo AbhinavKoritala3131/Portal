@@ -1,24 +1,18 @@
-# Use OpenJDK 17 (or 20, depending on your project)
-FROM eclipse-temurin:17-jdk-alpine
+FROM maven:3.9.4-eclipse-temurin-17 AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY mvnw pom.xml ./
-COPY .mvn .mvn
-
-# Download dependencies (cache them)
-RUN ./mvnw dependency:go-offline
-
-# Copy the rest of the code
+# Copy pom and source code
+COPY pom.xml .
 COPY src ./src
 
 # Build the project
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
-# Expose port 8080
+# Use lightweight JDK image for runtime
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+
+COPY --from=build /app/target/myproject1-1.0-SNAPSHOT.jar app.jar
 EXPOSE 8080
-
-# Run the JAR
-CMD ["java", "-jar", "target/myproject1-1.0-SNAPSHOT.jar"]
+CMD ["java", "-jar", "app.jar"]
