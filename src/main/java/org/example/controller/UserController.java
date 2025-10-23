@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.Optional;
 
-@CrossOrigin(origins = "http://localhost:5173")  // allow your frontend URL
+@CrossOrigin(origins = {"http://localhost:5173","https://abhinavk-vectrolla.netlify.app/"})  // allow your frontend URL
 @RestController
 @RequestMapping("/users")
 public class UserController {

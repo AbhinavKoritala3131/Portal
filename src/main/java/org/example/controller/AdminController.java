@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173","https://abhinavk-vectrolla.netlify.app/"})
 @RequestMapping("/admins")
 public class AdminController {
     @Autowired
