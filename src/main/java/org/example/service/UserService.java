@@ -129,6 +129,10 @@ public class UserService {
             response.put("userId", user.getId());
             response.put("fName", user.getFname());
             response.put("ClockStatus", timesheetService.userStat(user.getId()));
+            response.put("country", user.getCountry());
+            response.put("DOB", user.getDob());
+            response.put("mobile", user.getMobile());
+            response.put("lName", user.getLname());
             return ResponseEntity.ok(response);
 
         } catch (JwtException e) {
