@@ -53,31 +53,35 @@ public ResponseEntity<?> submitTimesheet(@RequestBody TimesheetDTO submissionDTO
 
 
 //    FETCH STATUS TO UPDATE THE SUBMITTED WEEKS
-    @PostMapping("/status-check")
-    public ResponseEntity<Map<String, String>> checkStatus(@RequestBody StatusCheckDTO request) {
-        Long empId = request.getEmpId();
-        List<String> weeks = request.getWeeks();
+@PostMapping("/status-check")
+public ResponseEntity<Map<String, String>> checkStatus(@RequestBody StatusCheckDTO request) {
+    Long empId = request.getEmpId();
+    List<String> weeks = request.getWeeks();
 
-        if (weeks == null || weeks.size() != 2) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Exactly two weeks must be provided"));
-        }
-
-        List<Status> statuses = statusRepository.findByEmpIdAndWeekIn(empId, weeks);
-
-        Map<String, String> result = new HashMap<>();
-        result.put("previous", null);
-        result.put("current", null);
-
-        for (Status status : statuses) {
-            if (status.getWeek().equals(weeks.get(0))) {
-                result.put("previous", status.getStatus());
-            } else if (status.getWeek().equals(weeks.get(1))) {
-                result.put("current", status.getStatus());
-            }
-        }
-
-        return ResponseEntity.ok(result);
+    if (weeks == null || weeks.size() != 2) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Exactly two weeks must be provided"));
     }
+
+    List<Status> statuses = statusRepository.findByEmpIdAndWeekIn(empId, weeks);
+
+    Map<String, String> result = new HashMap<>();
+    result.put("previous", "NOT_SUBMITTED");
+    result.put("current", "NOT_SUBMITTED");
+
+    for (Status status : statuses) {
+        String week = status.getWeek();
+        String stat = (status.getStatus() != null) ? status.getStatus().toUpperCase() : "NOT_SUBMITTED";
+
+        if (week.equals(weeks.get(0))) {
+            result.put("previous", stat);
+        } else if (week.equals(weeks.get(1))) {
+            result.put("current", stat);
+        }
+    }
+
+    return ResponseEntity.ok(result);
+}
+
 }
 
 
