@@ -33,4 +33,17 @@ public class ProjectService {
         // Step 2: fetch all projects matching these types
         return projectsRepository.findByProjectTypeIn(projectTypes);
     }
+
+    public List<String> NamesReturn(Long empId) {
+        List<ProjectGroups> pg=projectGroupsRepository.findByEmpId(empId);
+        List<String> projectTypes = pg.stream()
+                .map(ProjectGroups::getProjectType)
+                .distinct() // avoid duplicates
+                .collect(Collectors.toList());
+        List<ProjectsList> names=projectsRepository.findByProjectTypeIn(projectTypes);
+        return names.stream()
+                .map(ProjectsList::getProjectName)
+                .distinct() // avoid duplicates
+                .collect(Collectors.toList());
+    }
 }
