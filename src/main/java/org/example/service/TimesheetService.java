@@ -6,10 +6,7 @@ import org.example.dto.TimesheetDTO;
 import org.example.dto.TimesheetDTOEntries;
 import org.example.entity.*;
 import org.example.exception.UserNotFound;
-import org.example.repository.ClockRepository;
-import org.example.repository.StatusRepository;
-import org.example.repository.TimesheetRepository;
-import org.example.repository.UserStatusRepository;
+import org.example.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -33,6 +30,8 @@ public class TimesheetService {
     private StatusRepository statusRepository;
     @Autowired
     private UserStatusRepository userStatusRepository;
+    @Autowired
+    private ProjectsListRepository projectsListRepository;
 
     //SUBMIT TIMESHEET RECORDS
     @Transactional
@@ -54,7 +53,7 @@ public class TimesheetService {
             timesheetRepository.save(timesheet);
         });
 
-        // TO UPDATE THE STATUS AS UPDATED
+        // TO UPDATE THE STATUS
         Status status = statusRepository.findByEmpIdAndWeek(submissionDTO.getUserId(), submissionDTO.getWeek())
                 .orElse(new Status());
 
@@ -62,6 +61,8 @@ public class TimesheetService {
         status.setWeek(submissionDTO.getWeek());
         status.setTotal(submissionDTO.getWeekTotal());
         status.setStatus("SUBMITTED");
+        ProjectsList work=projectsListRepository.findByProjectName(entries.get(0).getProject());
+        status.setNote(work.getProjectDescription());
 
         statusRepository.save(status);
     }
