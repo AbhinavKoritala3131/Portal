@@ -20,6 +20,5 @@ public interface StatusRepository extends JpaRepository<Status, Long>{
     List<Status> findByWeekAndStatusIgnoreCase(String week, String status);
 
 
-
-
+    List<Status> findByWeek(String week);
 }

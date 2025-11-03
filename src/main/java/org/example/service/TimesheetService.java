@@ -36,16 +36,27 @@ public class TimesheetService {
     //SUBMIT TIMESHEET RECORDS
     @Transactional
     public void submitTimesheetWeek(TimesheetDTO submissionDTO) {
-
-        // Save all timesheet entries for the week
         List<TimesheetDTOEntries> entries = submissionDTO.getEntries();
 
         entries.forEach(entryDTO -> {
-            Timesheet timesheet = new Timesheet();
-            timesheet.setEmpId(entryDTO.getUserId());
+            // 🔍 Find existing entry for same emp & date
+            Optional<Timesheet> existingOpt =
+                    timesheetRepository.findByEmpIdAndDate(entryDTO.getUserId(), entryDTO.getDate());
+
+            Timesheet timesheet;
+            if (existingOpt.isPresent()) {
+                // ✅ Update existing record
+                timesheet = existingOpt.get();
+            } else {
+                // ✅ Create new record if not exists
+                timesheet = new Timesheet();
+                timesheet.setEmpId(entryDTO.getUserId());
+                timesheet.setDate(entryDTO.getDate());
+            }
+
+            // Common field updates
             timesheet.setStart(entryDTO.getStart());
             timesheet.setEnd_time(entryDTO.getEnd());
-            timesheet.setDate(entryDTO.getDate());
             timesheet.setWeek(entryDTO.getWeek());
             timesheet.setTotal(entryDTO.getTotal());
             timesheet.setProject(entryDTO.getProject());
@@ -61,8 +72,13 @@ public class TimesheetService {
         status.setWeek(submissionDTO.getWeek());
         status.setTotal(submissionDTO.getWeekTotal());
         status.setStatus("SUBMITTED");
-        ProjectsList work=projectsListRepository.findByProjectName(entries.get(0).getProject());
-        status.setNote(work.getProjectDescription());
+        String proj =entries.get(0).getProject();
+        if(!"N/A".equals(proj)) {
+            ProjectsList work = projectsListRepository.findByProjectName(entries.get(0).getProject());
+            status.setNote(work.getProjectDescription());
+        }else{
+            status.setNote("Not Applicable");
+        }
 
         statusRepository.save(status);
     }

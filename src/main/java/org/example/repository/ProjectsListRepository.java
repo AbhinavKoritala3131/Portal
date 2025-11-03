@@ -9,6 +9,8 @@ import java.util.List;
 @Repository
 public interface ProjectsListRepository extends JpaRepository<ProjectsList,Long> {
     List<ProjectsList> findByProjectTypeIn(List<String> projectTypes);
+    ProjectsList findByProjectName(String name);
+    List<ProjectsList> findByProjectType(String type);
+    boolean existsByProjectName(String projectName);
 
-    ProjectsList findByProjectName(String project);
 }

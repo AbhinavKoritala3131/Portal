@@ -67,15 +67,25 @@ public ResponseEntity<Map<String, String>> checkStatus(@RequestBody StatusCheckD
     Map<String, String> result = new HashMap<>();
     result.put("previous", "NOT_SUBMITTED");
     result.put("current", "NOT_SUBMITTED");
+    result.put("prevRem", "");
+    result.put("currRem", "");
 
     for (Status status : statuses) {
         String week = status.getWeek();
-        String stat = (status.getStatus() != null) ? status.getStatus().toUpperCase() : "NOT_SUBMITTED";
+        String stat = (status.getStatus() != null ) ? status.getStatus().toUpperCase() : "NOT_SUBMITTED";
+
+        String remark = stat.equals("REJECTED") ? status.getRemarks() : "";
+
+
 
         if (week.equals(weeks.get(0))) {
             result.put("previous", stat);
+            result.put("prevRem", remark);
+
         } else if (week.equals(weeks.get(1))) {
             result.put("current", stat);
+            result.put("currRem", remark);
+
         }
     }
 
