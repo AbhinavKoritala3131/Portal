@@ -3,9 +3,11 @@ package org.example.controller;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.example.dto.UpdateInfoDTO;
 import org.example.entity.AuthorizedUser;
 import org.example.dto.LoginDTO;
 import org.example.entity.User;
+import org.example.exception.UserExists;
 import org.example.exception.UserNotFound;
 import org.example.jwtConfig.JWTService;
 import org.example.repository.AuthUsersRepo;
@@ -13,10 +15,14 @@ import org.example.repository.UserRepository;
 import org.example.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -46,7 +52,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<String> createUser(@Valid  @RequestBody User user) {
-        Optional<AuthorizedUser> authUser = authUsersRepo.findByUsername(user.getUsername());
+        Optional<AuthorizedUser> authUser = authUsersRepo.findByUsername(user.getUsername().toLowerCase());
         if (authUser.isPresent()) {
             if(userRepository.existsByMobile(user.getMobile()) || userRepository.existsBySsn(
                         user.getSsn()
@@ -77,7 +83,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<Map<String,String>> signIn(@Valid @RequestBody LoginDTO loginDTO,
                                                      HttpServletResponse response){
-        if(userRepository.existsByUsername(loginDTO.getUsername())){
+        if (userRepository.existsByUsernameIgnoreCase(loginDTO.getUsername())) {
 
         return userService.login(loginDTO, response);}
         else{
@@ -98,6 +104,81 @@ public class UserController {
             return userService.getUserRole(authHeader);
         }
     }
+
+//    GIVE AUTHORIZED ACCESS TO REGISTER
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/authuser")
+    public ResponseEntity<String> authEmp(@RequestBody AuthorizedUser authUser) {
+
+        if(userRepository.existsByUsernameIgnoreCase(authUser.getUsername()) ||
+        userRepository.existsById(authUser.getId())){
+        throw new UserExists("User already Registered");
+        }
+        if (authUsersRepo.existsByUsernameIgnoreCase(authUser.getUsername()) ||
+                authUsersRepo.existsById(authUser.getId())) {
+            throw new UserExists("User already authorized");
+        }
+        authUser.setUsername(authUser.getUsername().toLowerCase());
+        authUsersRepo.save(authUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body("SUCCESS");
+
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteUser(
+            @RequestParam(value = "id", required = false) Long id,
+            @RequestParam(value = "username", required = false) String username) {
+
+        if (id == null && (username == null || username.isEmpty())) {
+            return ResponseEntity.badRequest().body("Either 'id' or 'username' must be provided.");
+        }
+        return userService.deleteUserFromDB(id, username);
+
+            }
+
+    @PutMapping("/updateInfo")
+    public ResponseEntity<User> updateInfo(@RequestBody UpdateInfoDTO infoDto) {
+
+        // Step 1: Fetch the existing user from the database (using empId)
+        Optional<User> userx = userRepository.findById(infoDto.getEmpId());
+
+
+        // Step 2: If user doesn't exist, return 404 Not Found
+        if (!userx.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        User user = userx.get();
+
+        // Step 3: Update non-sensitive fields
+        if (infoDto.getFname() != null && !infoDto.getFname().isEmpty()) {
+            user.setFname(infoDto.getFname());
+            user.setName(user.getName());
+        }
+        if (infoDto.getLname() != null && !infoDto.getLname().isEmpty()) {
+            user.setLname(infoDto.getLname());
+            user.setName(user.getName());
+        }
+        if (infoDto.getMobile() != null && !infoDto.getMobile().isEmpty()) {
+            String sanitizedMobile = infoDto.getMobile().replaceAll("[^0-9+]", "");  // Allow only numbers and '+'
+            user.setMobile(sanitizedMobile);        }
+        user.updatedName(user.getFname(), user.getLname());
+
+        // Step 4: Save the updated user back to the database
+        User updatedUser = userRepository.save(user);
+
+        // Step 5: Nullify sensitive fields before sending response
+        updatedUser.setPassword(null);  // Ensure password is not returned
+        updatedUser.setSsn(null);       // Ensure SSN is not returned
+        // You can nullify other sensitive fields here as well (if any)
+
+        // Step 6: Return the updated user object without sensitive data
+        return ResponseEntity.ok(updatedUser);
+    }
+
+
+
+
 
 
 //    }
