@@ -20,6 +20,8 @@ public class HrController {
     @Autowired
     private HRRepository hrRepository;
 
+
+// ADMINS AND HR'S CAN REVIEW THE PAYROLL INFO BY WEEK
     @PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
     @GetMapping("/getByWeek")
     public ResponseEntity<List<HR>> getByWeek(@RequestParam String week) {

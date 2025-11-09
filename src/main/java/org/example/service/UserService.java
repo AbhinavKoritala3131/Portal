@@ -1,6 +1,7 @@
 package org.example.service;
 
-
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.entity.AuthorizedUser;
@@ -33,6 +34,9 @@ import java.util.Optional;
 @Service
 public class UserService {
 
+    Logger logger = LogManager.getLogger(UserService.class);
+
+
 
     @Autowired
     private UserRepository userRepository;
@@ -51,7 +55,9 @@ public class UserService {
     private UserStatusRepository userStatusRepository;
 
 
+//    TO REGISTER THE USER
     public ResponseEntity<String> register(User user) {
+
         AuthorizedUser au = authUsersRepo.getByUsername(user.getUsername().toLowerCase());
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
         user.setPassword(encoder.encode(user.getPassword()));
@@ -69,13 +75,22 @@ public class UserService {
         user.setRole(au.getRole());
         user.setId(au.getId());
         authUsersRepo.delete(au); //Removes authUsers after registration.
+        logger.info("UserService : User {} deleted from authorized table",user.getUsername());
         userRepository.save(user);
+        logger.info("UserService : user registered in with {}",user.getUsername());
+
         return ResponseEntity.status(200).body(" You are all set "+user.getFname()+" !");
 
     }
 
-    public ResponseEntity<Map<String,String>> login(LoginDTO l, HttpServletResponse response) {
+//    THIS IS IN FUTURE FOR REFRESH TOKENS GENERATION
+//    public ResponseEntity<Map<String,String>> login(LoginDTO l, HttpServletResponse response) {
+
+//    TO LOGIN THE USER
+    public ResponseEntity<Map<String,String>> login(LoginDTO l) {
         try {
+
+
 
             Authentication authentication = authenticationManager
                     .authenticate(new UsernamePasswordAuthenticationToken(l.getUsername().toLowerCase(), l.getPassword()));
@@ -84,12 +99,10 @@ public class UserService {
                 );
 
 
-
-
                 Map<String,String> map = new HashMap<>();
                 map.put("jwtToken",jwtTok);
                 map.put("msg","Login Success");
-
+                logger.info("UserService : user logged in with {}",l.getUsername());
                 return ResponseEntity.ok(map);
             }
         }catch(Exception e) {
@@ -120,11 +133,13 @@ public class UserService {
     }
 
 
+    //    TO REQUEST USER DETAILS AFTER SUCCESSFULL LOGIN
     public ResponseEntity<?> getUserRole(String authHeader) {
         String token = authHeader.substring(7);
         try {
             String username = jwtService.extractUserName(token);
             Optional<User> userOpt = userRepository.findByUsername(username);
+            logger.info("UserService getUserRole : user details requested for {}",username);
 
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -149,6 +164,7 @@ public class UserService {
 
     }
 
+    //    REMOVE USER FROM DB
     @Transactional
     public ResponseEntity<String> deleteUserFromDB(Long id, String username) {
         Optional<User> userOpt = (id != null)
