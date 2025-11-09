@@ -30,6 +30,8 @@ public class AdminController {
     private UserStatusRepository userStatusRepository;
 
 
+
+//    FETCH TO SHOW ALL THE TIMESHEETS SUBMITTED IN THAT WEEK FOR ALL USERS
     @GetMapping("/timesheets-by-week")
     @PreAuthorize("hasRole('ADMIN')")
 
@@ -41,27 +43,9 @@ public class AdminController {
         return ResponseEntity.ok(entries);
     }
 
-// BELOW API CURRENTLY NOT REQUIRED
-//
-//    @PutMapping("/update-timesheet")
-//    public ResponseEntity<?> updateTimesheet(@RequestBody Timesheet updated) {
-//        Optional<Timesheet> optional = timesheetRepository.findById(updated.getId());
-//
-//        if (optional.isPresent()) {
-//            Timesheet existing = optional.get();
-//            existing.setStart(updated.getStart());
-//            existing.setEnd_time(updated.getEnd_time());
-//            existing.setTotal(updated.getTotal());
-//            existing.setProject(updated.getProject());
-//
-//            timesheetRepository.save(existing);
-//            return ResponseEntity.ok("Updated successfully");
-//        } else {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Timesheet not found");
-//        }
-//    }
 
 
+    //    FETCH TO SHOW ALL THE AGGREGATED TIMESHEETS SUBMITTED  FOR ALL USERS [ONE RECORD PER USER]
     @GetMapping("/status-by-week")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Status>> getPendingStatusByWeek(@RequestParam String week) {
@@ -70,6 +54,7 @@ public class AdminController {
     }
 
 
+//      ADMIN DECISION[APPROVE/REJECT] IS UPDATED
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/update-status")
     public ResponseEntity<?> updateStatus(@RequestBody ApprovalStatusDTO request) {
@@ -120,7 +105,7 @@ public class AdminController {
 
 
 
-
+// ADMIN EDITS THE TIMESHEET ENTRIES
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/update-multiple")
     public ResponseEntity<?> updateMultipleTimesheets(@RequestBody List<Timesheet> updates) {
@@ -170,6 +155,7 @@ public class AdminController {
         return ResponseEntity.ok("Timesheet updates and status total adjusted successfully.");
     }
 
+//    ADMIN CAN TRACK THE STATUS OF TIMESHEETS PER WEEK FOR ALL THE USERS
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/trackStatus")
     public ResponseEntity<List<Map<String, Object>>> trackStatus(@RequestParam String week) {
@@ -201,6 +187,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+//    ADMIN CAN FILTER / TRACK THE USER STATUS [ONLINE/OFFLINE]
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/userStatus")
     public ResponseEntity<List<Map<String, Object>>> getUserStatus(

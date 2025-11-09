@@ -34,6 +34,11 @@ public class SecurityConfig {
                 .csrf(customizer->customizer.disable())
                 .authorizeHttpRequests(Requests -> Requests
                         .requestMatchers("/users/register","/users/login","/health").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .anyRequest().authenticated())
 //                .requiresChannel(channel -> channel.anyRequest().requiresSecure()) // HTTPS enforcement (not in DEV)
 //                .formLogin(Customizer.withDefaults())

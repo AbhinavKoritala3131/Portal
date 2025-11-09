@@ -1,8 +1,9 @@
 package org.example.controller;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.example.requestLogs.Mapper;
 import org.example.dto.UpdateInfoDTO;
 import org.example.entity.AuthorizedUser;
 import org.example.dto.LoginDTO;
@@ -15,14 +16,11 @@ import org.example.repository.UserRepository;
 import org.example.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,6 +28,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+
+    Logger logger = LogManager.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -49,7 +49,7 @@ public class UserController {
 
 
 
-
+// TO REGISTER THE USER
     @PostMapping("/register")
     public ResponseEntity<String> createUser(@Valid  @RequestBody User user) {
         Optional<AuthorizedUser> authUser = authUsersRepo.findByUsername(user.getUsername().toLowerCase());
@@ -79,14 +79,22 @@ public class UserController {
     }
 
 
+/*  THIS IS FOR FUTURE REFRESHTOKENS
+public ResponseEntity<Map<String,String>> signIn(@Valid @RequestBody LoginDTO loginDTO,
+                                                 HttpServletResponse response){ */
 
+// TO LOGIN THE USER
     @PostMapping("/login")
-    public ResponseEntity<Map<String,String>> signIn(@Valid @RequestBody LoginDTO loginDTO,
-                                                     HttpServletResponse response){
+    public ResponseEntity<Map<String,String>> signIn(@Valid @RequestBody LoginDTO loginDTO){
+
         if (userRepository.existsByUsernameIgnoreCase(loginDTO.getUsername())) {
 
-        return userService.login(loginDTO, response);}
+            logger.info("User Controller signIn: User {} requested to login ",loginDTO.getUsername());
+
+        return userService.login(loginDTO);}
         else{
+            logger.info("UserController signIn: User {} tried to login without registering",loginDTO.getUsername());
+
             throw new UserNotFound("Please register before login ");
         }
 
@@ -94,10 +102,13 @@ public class UserController {
 
 
 
+//    TO REQUEST USER DETAILS AFTER SUCCESSFULL LOGIN
 
     @GetMapping("/who")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+            logger.info("UserController getCurrentUser: JWT Token not found");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing token");
         }
         else{
@@ -124,6 +135,7 @@ public class UserController {
 
     }
 
+    //    REMOVE USER FROM DB
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteUser(
@@ -137,6 +149,7 @@ public class UserController {
 
             }
 
+//         API IN PROGRESS : TO UPDATE THE USER INFO FROM PROFILE
     @PutMapping("/updateInfo")
     public ResponseEntity<User> updateInfo(@RequestBody UpdateInfoDTO infoDto) {
 
@@ -176,44 +189,5 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
-
-
-
-
-
-//    }
-//    @PutMapping("/update/{id}")
-//    public ResponseEntity<User> updateUser(@PathVariable Long id,  @RequestBody User updatedUser) {
-////        if (updatedUser.getId() == null) {
-////            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID is Required to update this user");
-////        }
-//        if (updatedUser.getName() == null && updatedUser.getEmail() == null) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No data provided to update.");
-//        }
-//        if ( updatedUser.getId()!=null && id!=updatedUser.getId()){
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID is not matching");
-//        }
-//        return userService.update(id,updatedUser);
-//
-//    }
-//    @DeleteMapping("/delete/{id}")
-//    public ResponseEntity<String> RemoveUser(@PathVariable Long id) {
-//        if ( id <1) {
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Enter a valid ID");
-//
-//        } else {
-//
-//            return userService.del(id);
-//        }
-//
-//
-//    }
-//    @GetMapping("getUser/{id}")
-//    public ResponseEntity<User> getUser(@PathVariable Long id){
-//        if (id>0){
-//            return ResponseEntity.ok(userService.getUser(id));
-//        }
-//        else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Check your ID and Try again ");
-//    }
 
 }
